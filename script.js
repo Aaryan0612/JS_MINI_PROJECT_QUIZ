@@ -67,8 +67,11 @@ function addQuestionInput() {
     questionDiv.className = 'question-block';
 
     questionDiv.innerHTML = `
-        <div class="form-group">
+        <div class="question-header">
             <label>Question ${questionIndex + 1}</label>
+            <button type="button" class="delete-question-btn" aria-label="Delete question">Delete</button>
+        </div>
+        <div class="form-group">
             <input type="text" class="q-text" placeholder="Type your question here...">
         </div>
         <div class="options-group">
@@ -83,7 +86,30 @@ function addQuestionInput() {
         </div>
     `;
 
+    const deleteBtn = questionDiv.querySelector('.delete-question-btn');
+    deleteBtn.addEventListener('click', () => {
+        if (questionsContainer.children.length <= 1) {
+            alert('You must keep at least one question.');
+            return;
+        }
+        questionDiv.remove();
+        reindexQuestionBlocks();
+    });
+
     questionsContainer.appendChild(questionDiv);
+}
+
+function reindexQuestionBlocks() {
+    const blocks = questionsContainer.querySelectorAll('.question-block');
+    blocks.forEach((block, index) => {
+        const label = block.querySelector('.question-header label');
+        if (label) label.textContent = `Question ${index + 1}`;
+
+        const radios = block.querySelectorAll('input[type="radio"]');
+        radios.forEach(radio => {
+            radio.name = `correct-${index}`;
+        });
+    });
 }
 
 function saveQuiz() {
@@ -141,6 +167,7 @@ function saveQuiz() {
     };
 
     quizzes.push(newQuiz);
+    localStorage.setItem('quizzes', JSON.stringify(quizzes));
     alert('Quiz saved successfully!');
     renderQuizList();
     showView('dashboard');
@@ -151,11 +178,13 @@ function saveQuiz() {
 // ---------------------------------------------------------
 
 function renderQuizList() {
+
+    quizzes = JSON.parse(localStorage.getItem('quizzes')) || [];
     const listContainer = document.getElementById('quiz-list');
     listContainer.innerHTML = '';
 
     if (quizzes.length === 0) {
-        listContainer.innerHTML = '<p class="empty-state">No quizzes available. Create one to get started!</p>';
+        listContainer.innerHTML = '<p class="empty-state" style="padding-bottom: 20px;">No quizzes available. Create one to get started!</p>';
         return;
     }
 
@@ -365,6 +394,10 @@ function calculateResults() {
     const percentage = Math.round((score / questions.length) * 100);
     document.getElementById('score-percentage').textContent = `${percentage}%`;
 
+    // 2.5 Store result for this quiz
+    persistQuizResult(score, questions.length, percentage);
+    renderResultsHistory();
+
     // 3. Add Summary Sentence
     const scoreCard = document.querySelector('.score-card');
 
@@ -376,4 +409,60 @@ function calculateResults() {
     summaryP.id = 'summary-text';
     summaryP.textContent = `You answered ${score} out of ${questions.length} questions correctly.`;
     scoreCard.appendChild(summaryP);
+}
+
+function renderResultsHistory() {
+    const container = document.getElementById('results-history');
+    if (!container) return;
+
+    const results = currentQuiz && Array.isArray(currentQuiz.results) ? currentQuiz.results : [];
+
+    if (results.length === 0) {
+        container.innerHTML = '<p class="empty-state">No attempts yet.</p>';
+        return;
+    }
+
+    container.innerHTML = results
+        .slice()
+        .reverse()
+        .map(result => {
+            const date = new Date(result.timestamp);
+            const formattedDate = isNaN(date.getTime())
+                ? result.timestamp
+                : date.toLocaleString();
+
+            return `
+                <div class="result-item">
+                    <span class="result-score">${result.score} / ${result.total}</span>
+                    <span class="result-meta">${result.percentage}% • ${formattedDate}</span>
+                </div>
+            `;
+        })
+        .join('');
+}
+
+function persistQuizResult(score, total, percentage) {
+    if (!currentQuiz) return;
+
+    const resultsEntry = {
+        score,
+        total,
+        percentage,
+        timestamp: new Date().toISOString()
+    };
+
+    const storedQuizzes = JSON.parse(localStorage.getItem('quizzes')) || [];
+    const quizIndex = storedQuizzes.findIndex(q => q.id === currentQuiz.id);
+
+    if (quizIndex === -1) return;
+
+    if (!Array.isArray(storedQuizzes[quizIndex].results)) {
+        storedQuizzes[quizIndex].results = [];
+    }
+
+    storedQuizzes[quizIndex].results.push(resultsEntry);
+    localStorage.setItem('quizzes', JSON.stringify(storedQuizzes));
+
+    quizzes = storedQuizzes;
+    currentQuiz = storedQuizzes[quizIndex];
 }

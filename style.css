@@ -185,6 +185,29 @@ button:active {
     /* Spacing between cards */
 }
 
+.question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.question-header label {
+    margin-bottom: 0;
+}
+
+.delete-question-btn {
+    background-color: transparent;
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.delete-question-btn:hover {
+    background-color: #FEE2E2;
+}
+
 .question-block input[type="text"] {
     background-color: white;
     /* Ensure inputs pop */
@@ -307,4 +330,29 @@ button:active {
     font-size: 0.95rem;
     /* slightly larger */
     margin-bottom: 0.25rem;
+}
+
+/* Results History */
+.results-history {
+    margin-bottom: 2rem;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: #F9FAFB;
+    margin-bottom: 0.5rem;
+}
+
+.result-score {
+    font-weight: 600;
+}
+
+.result-meta {
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
